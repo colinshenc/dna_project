@@ -16,6 +16,7 @@ import utils
 import torch
 import torch.nn.functional as F
 import torch.utils.data
+
 import torch.nn as nn
 from torch import relu, sigmoid
 import torch.nn.modules.activation as activation
@@ -41,38 +42,75 @@ def get_data_loader(config, ):
     data_path = '{}{}'.format(config['data_root'], config['data_file'])
     print('\n\n00000')
     data = h5py.File(data_path, 'r')
-
+    print(list(data.keys()))
     dataset = {}
     dataloaders = {}
     #Train data
-    dataset['train'] = torch.utils.data.TensorDataset(torch.Tensor(data['train_in']), 
-                                                     torch.Tensor(data['train_out']))
-    print('train length {}'.format(len(dataset['train'])))
-    dataloaders['train'] = torch.utils.data.DataLoader(dataset['train'],
-                                                      batch_size=config['batch_size'], shuffle=True,
-                                                      num_workers=12, pin_memory=True, drop_last=False,)
-    
+    dataset['train'] = torch.utils.data.TensorDataset(torch.tensor(np.array(data['train_in']), dtype=torch.float32),
+                                                     torch.tensor(np.array(data['train_out']), dtype=torch.float32))
+    # print(torch.tensor(data['train_in']).shape)
+    # print(torch.tensor(data['train_out']).shape)
+    # print(torch.tensor(data['train_in'])[100])
+    # print(torch.tensor(data['train_out'])[100])
+    # print('\n\n')
+    #print('train length {}'.format(len(dataset['train'])))
+    # dataloaders['train'] = torch.utils.data.DataLoader(dataset['train'],
+    #                                                   batch_size=config['batch_size'], shuffle=True,
+    #                                                   num_workers=12, pin_memory=True, drop_last=False,)
+    #
     #Validation data
-    dataset['valid'] = torch.utils.data.TensorDataset(torch.Tensor(data['valid_in']), 
-                                                     torch.Tensor(data['valid_out']))
-    print('valid length {}'.format(len(dataset['valid'])))
-
-    dataloaders['valid'] = torch.utils.data.DataLoader(dataset['valid'],
-                                                      batch_size=config['batch_size'], shuffle=True, pin_memory=True, drop_last=False,
-                                                      num_workers=12)
+    dataset['valid'] = torch.utils.data.TensorDataset(torch.tensor(np.array(data['valid_in']), dtype=torch.float32),
+                                                     torch.tensor(np.array(data['valid_out']), dtype=torch.float32))
+    #print('valid length {}'.format(len(dataset['valid'])))
+    # print(torch.tensor(data['valid_in']).shape)
+    # print(torch.tensor(data['valid_out']).shape)
+    # print(torch.tensor(data['valid_in'])[100])
+    # print(torch.tensor(data['valid_out'])[100])
+    # print('\n\n')
+    # dataloaders['valid'] = torch.utils.data.DataLoader(dataset['valid'],
+    #                                                   batch_size=config['batch_size'], shuffle=True, pin_memory=True, drop_last=False,
+    #                                                   num_workers=12)
     
     #Test data
-    dataset['test'] = torch.utils.data.TensorDataset(torch.Tensor(data['test_in']), 
-                                                     torch.Tensor(data['test_out']))
-    print('test length {}'.format(len(dataset['test'])))
+    dataset['test'] = torch.utils.data.TensorDataset(torch.tensor(np.array(data['test_in']), dtype=torch.float32),
+                                                     torch.tensor(np.array(data['test_out']), dtype=torch.float32))
+    # print(torch.tensor(data['test_in']).shape)
+    # print(torch.tensor(data['test_out']).shape)
+    # print(torch.tensor(data['test_in'])[100])
+    # print(torch.tensor(data['test_out'])[100])
+    # print('\n\n')
+    #print('test length {}'.format(len(dataset['test'])))
 
-    dataloaders['test'] = torch.utils.data.DataLoader(dataset['test'],
-                                                      batch_size=config['batch_size'], shuffle=True, pin_memory=True, drop_last=False,
+    # dataloaders['test'] = torch.utils.data.DataLoader(dataset['test'],
+    #                                                   batch_size=config['batch_size'], shuffle=True, pin_memory=True, drop_last=False,
+    #                                                  num_workers=12)
+    # print('entire dataset length {}'.format(len(dataset)))
+
+    dataset = torch.utils.data.ConcatDataset([dataset['train'], dataset['valid'], dataset['test']])
+    #print('entire dataset length {}'.format(len(dataset)))
+
+    dataset_train, dataset_valid, dataset_test = torch.utils.data.random_split(dataset, lengths=[983040, 92160, len(dataset)-983040-92160],)# generator=torch.Generator().manual_seed(42))
+
+    dataloaders['train'], dataloaders['valid'], dataloaders['test'] = torch.utils.data.DataLoader(dataset_train, batch_size=config['batch_size'], shuffle=True,
+                                                      num_workers=12, pin_memory=True, drop_last=False,), torch.utils.data.DataLoader(dataset_valid,
+                                                                                  batch_size=config['batch_size'], shuffle=True, pin_memory=True, drop_last=False,
+                                                                                  num_workers=12), torch.utils.data.DataLoader(dataset_test,
+                                                      batch_size=2633, shuffle=True, pin_memory=True, drop_last=False,
                                                      num_workers=12)
+    with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
+        file.write('entire dataset length {}\n'.format(len(dataset)))
+        file.write('train batch length {}\n'.format(len(dataloaders['train'])*config['batch_size']))
+        file.write('valid batch length {}\n'.format(len(dataloaders['valid'])*config['batch_size']))
+        file.write('test batch length {}\n'.format(len(dataloaders['test'])*2633))
+
+    print('entire dataset length {}\n'.format(len(dataset)))
+    print('train batch length {}\n'.format(len(dataloaders['train']) * config['batch_size']))
+    print('valid batch length {}\n'.format(len(dataloaders['valid']) * config['batch_size']))
+    print('test batch length {}\n'.format(len(dataloaders['test']) * 2633))
     print('Dataset Loaded')
-    target_labels = list(data['target_labels'])
-    train_out = data['train_out']
-    return dataloaders, target_labels, train_out
+    #target_labels = list(data['target_labels'])
+    #train_out = data['train_out']
+    return dataloaders#, target_labels, train_out
 
 ############################################################
 #function to convert sequences to one hot encoding
@@ -187,7 +225,7 @@ def train_model(config, train_loader, test_loader, model, device, criterion, sta
         test_error.append(test_loss)
         
         if verbose:
-            print_msg = 'Epoch [{}], Current Train Loss: {:.5f}, Current Val Loss: {:.5f}'.format(epoch, epoch_loss, test_loss)
+            print_msg = 'Epoch [{}], Current Train Loss: {:.5f}, Current Val Loss: {:.5f}\n'.format(epoch, epoch_loss, test_loss)
             with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
                 file.write(print_msg)
 

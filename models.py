@@ -17,24 +17,24 @@ class ConvNetDeepCrossSpecies(nn.Module):
         self.feat_mult = config['feature_multiplier']
         self.init = config['init_func']
 
-        self.emb = nn.Embedding(12, 4)
+        #self.emb = nn.Embedding(12, 4)
 
-        self.l0 = nn.Linear(1000, 256)
-        self.bn0 = nn.BatchNorm1d(256)
-        self.rl0 = nn.LeakyReLU()
+        # self.l0 = nn.Linear(1000, 256)
+        # self.bn0 = nn.BatchNorm1d(256)
+        # self.rl0 = nn.LeakyReLU()
 
-        self.c1 = nn.Conv1d(in_channels=self.in_channels, out_channels=self.feat_mult, kernel_size=23)
+        self.c1 = nn.Conv1d(in_channels=self.in_channels, out_channels=self.feat_mult, kernel_size=17)
         self.bn1 = nn.BatchNorm1d(self.feat_mult)
         self.rl1 = nn.LeakyReLU()
         #self.mp1 = nn.MaxPool1d(3,3)
-        self.resblock1 = BasicBlock1D(in_channels=self.feat_mult, out_channels=self.feat_mult, kernel_size=23)
+        #self.resblock1 = BasicBlock1D(in_channels=self.feat_mult, out_channels=self.feat_mult, kernel_size=23)
 
         # Block 2 :
-        self.c2 = nn.Conv1d(in_channels=self.feat_mult, out_channels=2*self.feat_mult,kernel_size=23)
+        self.c2 = nn.Conv1d(in_channels=self.feat_mult, out_channels=2*self.feat_mult, kernel_size=17)
         self.bn2 = nn.BatchNorm1d(2*self.feat_mult)
         self.rl2 = nn.LeakyReLU()
         #self.mp2 = nn.MaxPool1d(3,3)
-        self.resblock2 = BasicBlock1D(in_channels=2*self.feat_mult, out_channels=2*self.feat_mult, kernel_size=23)
+        #self.resblock2 = BasicBlock1D(in_channels=2*self.feat_mult, out_channels=2*self.feat_mult, kernel_size=23)
 
         # Block 3 :
         # self.c3 = nn.Conv1d(in_channels=2*self.feat_mult, out_channels=4*self.feat_mult, kernel_size=23)
@@ -43,21 +43,21 @@ class ConvNetDeepCrossSpecies(nn.Module):
         # # #self.mp3 = nn.MaxPool1d(3,3)
         # self.resblock3 = BasicBlock1D(in_channels=4*self.feat_mult, out_channels=4*self.feat_mult, kernel_size=23)
 
-        self.c4 = nn.Conv1d(in_channels=2*self.feat_mult, out_channels=16, kernel_size=23)
+        self.c4 = nn.Conv1d(in_channels=2*self.feat_mult, out_channels=16, kernel_size=17)
         self.bn4 = nn.BatchNorm1d(16)
         self.rl4 = nn.LeakyReLU()
         #self.resblock4 = BasicBlock1D(in_channels=4*self.feat_mult, out_channels=16, kernel_size=9)
 
         # Block 4 : Fully Connected 1 :
-        self.d_ = nn.Linear(1632, 2048) #1000 for 200 input size
-        self.bn_ = nn.BatchNorm1d(2048, True)
+        self.d_ = nn.Linear(2944, 1024) #1000 for 200 input size
+        self.bn_ = nn.BatchNorm1d(1024, True)
         self.rl_ = nn.LeakyReLU()
         self.dr_ = nn.Dropout(0.3)
 
 
 
         # Block 5 : Fully Connected 2 :
-        self.d5 = nn.Linear(2048, self.out_channels)
+        self.d5 = nn.Linear(1024, self.out_channels)
         self.bn5 = nn.BatchNorm1d(self.out_channels,  True)
         self.rl5 = nn.LeakyReLU()
         self.dr5 = nn.Dropout(0.3)
@@ -81,14 +81,14 @@ class ConvNetDeepCrossSpecies(nn.Module):
         # x is of size - batch, 4, 200
         # print('0 shape {}'.format(x.shape))
         #print('-10 shape {}'.format(x.shape))
-        h = self.emb(x.long())
+        #h = self.emb(x.long())
         # print('5 shape {}'.format(h.shape))
-        h = h.reshape(h.shape[0], h.shape[1], -1)
+        #h = h.reshape(h.shape[0], h.shape[1], -1)
         # print('10 shape {}'.format(h.shape))
-        h = self.rl0(self.l0(h))
-        h = self.rl1(self.bn1(self.c1(h))) # output - batch, 100, 182
+        #h = self.rl0(self.l0(h))
+        h = self.rl1(self.bn1(self.c1(x))) # output - batch, 100, 182
         #print('-5 shape {}'.format(x.shape))
-        h = self.resblock1(h)
+        #h = self.resblock1(h)
         #h = self.resblock3(h)
         #o = self.resblock4(h)
         # we save the activations of the first layer (interpretation)
@@ -99,7 +99,7 @@ class ConvNetDeepCrossSpecies(nn.Module):
         # input is of size batch, 100, 60
         #x = self.mp2(self.rl2(self.bn2(self.c2(x)))) #output - batch, 200, 18
         h = self.rl2(self.bn2(self.c2(h))) #output - batch, 200, 18
-        h = self.resblock2(h)
+        #h = self.resblock2(h)
 
         # Block 3
         # input is of size batch, 200, 18
@@ -123,7 +123,8 @@ class ConvNetDeepCrossSpecies(nn.Module):
 
         # FC2
         #input is of size - batch, 1000
-        o = self.dr5(self.rl5(self.bn5(self.d5(o)))) #output - batch, 1000
+        #o = self.dr5(self.rl5(self.bn5(self.d5(o)))) #output - batch, 1000
+        o = self.rl5(self.bn5(self.d5(o))) #output - batch, 1000
 
         # FC3
         #input is of size - batch, 1000

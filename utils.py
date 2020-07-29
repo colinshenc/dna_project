@@ -40,7 +40,7 @@ def prepare_parser():
         '--data_root', type=str, default='/ubc/cs/research/shield/projects/cshen001/dna_project/data/',
         help='Default location where data is stored (default: %(default)s)')
     parser.add_argument(
-        '--data_file', type=str, default='dataset_chr_left_out_10.h5',
+        '--data_file', type=str, default='dataset_chr_left_out_1_05_valid.h5',
         help='Name of the file in data path (default: %(default)s)')
     parser.add_argument(
         '--ckpts_path', type=str, default='/ubc/cs/research/shield/projects/cshen001/dna_project/human_mouse_dna_classification/ckpts/',

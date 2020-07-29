@@ -33,12 +33,13 @@ def run(config):
 
 
     #load the dataset
-    dataloaders, target_labels, train_out = get_data_loader(config,)
+    #dataloaders, target_labels, train_out = get_data_loader(config,)
+    dataloaders = get_data_loader(config,)
 
     #decode labels
-    target_labels = [i.decode("utf-8") for i in target_labels]
+    #target_labels = [i.decode("utf-8") for i in target_labels]
 
-    num_classes = len(target_labels) #number of classes
+    #num_classes = len(target_labels) #number of classes
 
     #initialize the model
     model = ConvNetDeepCrossSpecies(config).to(device)
