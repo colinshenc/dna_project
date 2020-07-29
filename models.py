@@ -49,7 +49,7 @@ class ConvNetDeepCrossSpecies(nn.Module):
         #self.resblock4 = BasicBlock1D(in_channels=4*self.feat_mult, out_channels=16, kernel_size=9)
 
         # Block 4 : Fully Connected 1 :
-        self.d_ = nn.Linear(2944, 1024) #1000 for 200 input size
+        self.d_ = nn.Linear(3232, 1024) #1000 for 200 input size
         self.bn_ = nn.BatchNorm1d(1024, True)
         self.rl_ = nn.LeakyReLU()
         self.dr_ = nn.Dropout(0.3)
@@ -60,7 +60,7 @@ class ConvNetDeepCrossSpecies(nn.Module):
         self.d5 = nn.Linear(1024, self.out_channels)
         self.bn5 = nn.BatchNorm1d(self.out_channels,  True)
         self.rl5 = nn.LeakyReLU()
-        self.dr5 = nn.Dropout(0.3)
+        #self.dr5 = nn.Dropout(0.3)
 
         # Block 6 :4Fully connected 3
         #self.d6 = nn.Linear(256, self.out_channels)

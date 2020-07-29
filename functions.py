@@ -98,10 +98,10 @@ def get_data_loader(config, ):
                                                       batch_size=2633, shuffle=True, pin_memory=True, drop_last=False,
                                                      num_workers=12)
     with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
-        file.write('entire dataset length {}\n'.format(len(dataset)))
-        file.write('train batch length {}\n'.format(len(dataloaders['train'])*config['batch_size']))
-        file.write('valid batch length {}\n'.format(len(dataloaders['valid'])*config['batch_size']))
-        file.write('test batch length {}\n'.format(len(dataloaders['test'])*2633))
+        file.write('Entire dataset length {}\n'.format(len(dataset)))
+        file.write('Train batch length {}\n'.format(len(dataloaders['train'])*config['batch_size']))
+        file.write('Valid batch length {}\n'.format(len(dataloaders['valid'])*config['batch_size']))
+        file.write('Test batch length {}\n'.format(len(dataloaders['test'])*2633))
 
     print('entire dataset length {}\n'.format(len(dataset)))
     print('train batch length {}\n'.format(len(dataloaders['train']) * config['batch_size']))

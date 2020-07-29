@@ -1,0 +1,80 @@
+entire dataset length 1254244
+train batch length 983040
+valid batch length 92160
+test batch length 179044
+Epoch [0], Current Train Loss: 0.64938, Current Val Loss: 0.62999
+Epoch [1], Current Train Loss: 0.61696, Current Val Loss: 0.62593
+Epoch [2], Current Train Loss: 0.60626, Current Val Loss: 0.60652
+Epoch [3], Current Train Loss: 0.59907, Current Val Loss: 0.62398
+Epoch [4], Current Train Loss: 0.59336, Current Val Loss: 0.67436
+Epoch [5], Current Train Loss: 0.58831, Current Val Loss: 0.60587
+Epoch [6], Current Train Loss: 0.58387, Current Val Loss: 0.59978
+Epoch [7], Current Train Loss: 0.57952, Current Val Loss: 0.63622
+Epoch [8], Current Train Loss: 0.57530, Current Val Loss: 0.59891
+Epoch [9], Current Train Loss: 0.57119, Current Val Loss: 0.59352
+Epoch [10], Current Train Loss: 0.56746, Current Val Loss: 0.60495
+Epoch [11], Current Train Loss: 0.56360, Current Val Loss: 0.61729
+Epoch [12], Current Train Loss: 0.55946, Current Val Loss: 0.59525
+Epoch [13], Current Train Loss: 0.55561, Current Val Loss: 0.59836
+Epoch [14], Current Train Loss: 0.55178, Current Val Loss: 0.59134
+
+
+              precision    recall  f1-score   support
+
+       Mouse       0.76      0.77      0.76     89958
+       Human       0.76      0.75      0.76     89086
+
+    accuracy                           0.76    179044
+   macro avg       0.76      0.76      0.76    179044
+weighted avg       0.76      0.76      0.76    179044
+
+TP: 66862 TN: 69008 FP: 20950 FN: 22224
+
+Precision : 0.76 Recall : 0.75 Accuracy : 0.76
+[[69008 20950]
+ [22224 66862]]
+Roc AUC Score : 0.84
+AUPRC 0.84
+
+entire dataset length 1254244
+train batch length 983040
+valid batch length 92160
+test batch length 179044
+entire dataset length 1254244
+train batch length 983040
+valid batch length 92160
+test batch length 179044
+Epoch [0], Current Train Loss: 0.55750, Current Val Loss: 0.56065
+Epoch [1], Current Train Loss: 0.55282, Current Val Loss: 0.55566
+Epoch [2], Current Train Loss: 0.54873, Current Val Loss: 0.55708
+Epoch [3], Current Train Loss: 0.54479, Current Val Loss: 0.57394
+Epoch [4], Current Train Loss: 0.54052, Current Val Loss: 0.65665
+Epoch [5], Current Train Loss: 0.53622, Current Val Loss: 0.60781
+Epoch [6], Current Train Loss: 0.53206, Current Val Loss: 0.56114
+Epoch [7], Current Train Loss: 0.52793, Current Val Loss: 0.55719
+Epoch [8], Current Train Loss: 0.52376, Current Val Loss: 0.56830
+Epoch [9], Current Train Loss: 0.51929, Current Val Loss: 0.57291
+Epoch [10], Current Train Loss: 0.51519, Current Val Loss: 0.56434
+Epoch [11], Current Train Loss: 0.51072, Current Val Loss: 0.57715
+Epoch [12], Current Train Loss: 0.50705, Current Val Loss: 0.56225
+Epoch [13], Current Train Loss: 0.50314, Current Val Loss: 0.64106
+Epoch [14], Current Train Loss: 0.49909, Current Val Loss: 0.56143
+
+
+              precision    recall  f1-score   support
+
+       Mouse       0.78      0.85      0.81     89596
+       Human       0.83      0.76      0.80     89448
+
+    accuracy                           0.81    179044
+   macro avg       0.81      0.81      0.80    179044
+weighted avg       0.81      0.81      0.80    179044
+
+TP: 68252 TN: 75915 FP: 13681 FN: 21196
+
+Precision : 0.83 Recall : 0.76 Accuracy : 0.81
+[[75915 13681]
+ [21196 68252]]
+Roc AUC Score : 0.89
+AUPRC 0.89
+

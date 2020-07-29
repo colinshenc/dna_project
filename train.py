@@ -66,6 +66,8 @@ def run(config):
 def main():
     parser = utils.prepare_parser()
     config = vars(parser.parse_args())
+    with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
+        file.write(config)
     print(config)
     run(config)
 
