@@ -12,6 +12,8 @@ from collections import OrderedDict
 import os
 import pickle
 from models import *
+from model_DanQ import DanQ
+
 import utils
 import torch
 import torch.nn.functional as F
@@ -41,12 +43,13 @@ import h5py
 def get_data_loader(config, ):
     data_path = '{}{}'.format(config['data_root'], config['data_file'])
     print('\n\n00000')
+    print(data_path)
     data = h5py.File(data_path, 'r')
     print(list(data.keys()))
     dataset = {}
     dataloaders = {}
     #Train data
-    dataset['train'] = torch.utils.data.TensorDataset(torch.tensor(np.array(data['train_in']), dtype=torch.float32),
+    dataset_train = torch.utils.data.TensorDataset(torch.tensor(np.array(data['train_in']), dtype=torch.float32),
                                                      torch.tensor(np.array(data['train_out']), dtype=torch.float32))
     # print(torch.tensor(data['train_in']).shape)
     # print(torch.tensor(data['train_out']).shape)
@@ -59,7 +62,7 @@ def get_data_loader(config, ):
     #                                                   num_workers=12, pin_memory=True, drop_last=False,)
     #
     #Validation data
-    dataset['valid'] = torch.utils.data.TensorDataset(torch.tensor(np.array(data['valid_in']), dtype=torch.float32),
+    dataset_valid = torch.utils.data.TensorDataset(torch.tensor(np.array(data['valid_in']), dtype=torch.float32),
                                                      torch.tensor(np.array(data['valid_out']), dtype=torch.float32))
     #print('valid length {}'.format(len(dataset['valid'])))
     # print(torch.tensor(data['valid_in']).shape)
@@ -72,7 +75,7 @@ def get_data_loader(config, ):
     #                                                   num_workers=12)
     
     #Test data
-    dataset['test'] = torch.utils.data.TensorDataset(torch.tensor(np.array(data['test_in']), dtype=torch.float32),
+    dataset_test = torch.utils.data.TensorDataset(torch.tensor(np.array(data['test_in']), dtype=torch.float32),
                                                      torch.tensor(np.array(data['test_out']), dtype=torch.float32))
     # print(torch.tensor(data['test_in']).shape)
     # print(torch.tensor(data['test_out']).shape)
@@ -86,27 +89,25 @@ def get_data_loader(config, ):
     #                                                  num_workers=12)
     # print('entire dataset length {}'.format(len(dataset)))
 
-    dataset = torch.utils.data.ConcatDataset([dataset['train'], dataset['valid'], dataset['test']])
     #print('entire dataset length {}'.format(len(dataset)))
 
-    dataset_train, dataset_valid, dataset_test = torch.utils.data.random_split(dataset, lengths=[983040, 92160, len(dataset)-983040-92160],)# generator=torch.Generator().manual_seed(42))
 
     dataloaders['train'], dataloaders['valid'], dataloaders['test'] = torch.utils.data.DataLoader(dataset_train, batch_size=config['batch_size'], shuffle=True,
                                                       num_workers=12, pin_memory=True, drop_last=False,), torch.utils.data.DataLoader(dataset_valid,
                                                                                   batch_size=config['batch_size'], shuffle=True, pin_memory=True, drop_last=False,
                                                                                   num_workers=12), torch.utils.data.DataLoader(dataset_test,
-                                                      batch_size=2633, shuffle=True, pin_memory=True, drop_last=False,
+                                                      batch_size=4211, shuffle=True, pin_memory=True, drop_last=False,
                                                      num_workers=12)
     with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
-        file.write('Entire dataset length {}\n'.format(len(dataset)))
-        file.write('Train batch length {}\n'.format(len(dataloaders['train'])*config['batch_size']))
-        file.write('Valid batch length {}\n'.format(len(dataloaders['valid'])*config['batch_size']))
-        file.write('Test batch length {}\n'.format(len(dataloaders['test'])*2633))
+        # file.write('\nEntire dataset length {}\n'.format(len(dataset)))
+        file.write('Train batch length {}\n'.format(len(dataset_train)))
+        file.write('Valid batch length {}\n'.format(len(dataset_valid)))
+        file.write('Test batch length {}\n'.format(len(dataset_test)))
 
-    print('entire dataset length {}\n'.format(len(dataset)))
-    print('train batch length {}\n'.format(len(dataloaders['train']) * config['batch_size']))
-    print('valid batch length {}\n'.format(len(dataloaders['valid']) * config['batch_size']))
-    print('test batch length {}\n'.format(len(dataloaders['test']) * 2633))
+    # print('Entire dataset length {}\n'.format(len(dataset)))
+    print('Train batch length {}\n'.format(len(dataset_train)))
+    print('Valid batch length {}\n'.format(len(dataset_valid)))
+    print('Test batch length {}\n'.format(len(dataset_test)))
     print('Dataset Loaded')
     #target_labels = list(data['target_labels'])
     #train_out = data['train_out']
@@ -174,14 +175,16 @@ def train_model(config, train_loader, test_loader, model, device, criterion, sta
     # ckpt_path = '{}{}'.format(config[''])
     for epoch in range(config['num_epochs']):
         
-        model.train() #tell model explicitly that we train
-        utils.toggle_gradients(model, True)
-        #logs = {}
+        # model.train() #tell model explicitly that we train
+        # utils.toggle_gradients(model, True)
+        # #logs = {}
         
         running_loss = 0.0
         #running_fbeta = 0.0
-        
+        '''Train'''
         for seqs, labels in train_loader:
+            model.train()
+            utils.toggle_gradients(model, True)
             x = seqs.to(device)
             labels = labels.to(device)
             
@@ -209,13 +212,13 @@ def train_model(config, train_loader, test_loader, model, device, criterion, sta
         #calculate test (validation) loss for epoch
         test_loss = 0.0
         #test_fbeta = 0.0
-        
+        '''Validation'''
         with torch.no_grad(): #we don't train and don't save gradients here
             model.eval() #we set forward module to change dropout and batch normalization techniques
             for seqs, labels in test_loader:
                 x = seqs.to(device)
                 y = labels.to(device)
-                model.eval() #we set forward module to change dropout and batch normalization techniques
+                # model.eval() #we set forward module to change dropout and batch normalization techniques
                 outputs = model(x)
                 loss = criterion(outputs, y)
                 test_loss = test_loss + loss.item()
@@ -223,7 +226,10 @@ def train_model(config, train_loader, test_loader, model, device, criterion, sta
         test_loss = test_loss / len(test_loader) 
         #logs['test_log_loss'] = test_loss
         test_error.append(test_loss)
-        
+        '''danq uses scheduler..'''
+        if config['model'] == 'danq':
+            model.sched.step(test_loss)
+
         if verbose:
             print_msg = 'Epoch [{}], Current Train Loss: {:.5f}, Current Val Loss: {:.5f}\n'.format(epoch, epoch_loss, test_loss)
             with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
@@ -231,10 +237,14 @@ def train_model(config, train_loader, test_loader, model, device, criterion, sta
 
             print(print_msg)
         if test_loss < state_dict['best_test_loss']:
-            print('Best epoch {}'.format(epoch))
+            with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
+                file.write('Best epoch {}, saving weights...'.format(epoch))
+            print('Best epoch {}, saving weights...'.format(epoch))
             state_dict['best_test_loss'] = test_loss
             state_dict['best_epoch'] = epoch
+            '''Only save weights when there is improvement.'''
             utils.save_weights(config, model, state_dict)
+            # model.train()
             # best_model_wts = copy.deepcopy(model.state_dict())
                  #name_ind+".pth") #weights_folder, name_ind
 
@@ -248,12 +258,27 @@ def train_model(config, train_loader, test_loader, model, device, criterion, sta
 ############################################################    
 #function to test the performance of the model
 ############################################################
-def run_test( model, dataloader_test, device):
+def run_test(config, state_dict, dataloader_test, device):
     print('Start testing...')
+    '''re-initialize the model, just to do it for loading weights later'''
+    if config['model'] == 'ours':
+        model = ConvNetDeepCrossSpecies(config).to(device)
+        # criterion = nn.BCEWithLogitsLoss()  # - no weights
+        # scheduler = lambda optimzer, _, _: optimizer # pass through.
+        print('\n======>Our model<======\n')
+
+    elif config['model'] == 'danq':
+        '''their stuff...'''
+        torch.manual_seed(1337)
+        np.random.seed(1337)
+        torch.cuda.manual_seed(1337)
+        model = DanQ(config).to(device)
+        # criterion = nn.BCEWithLogitsLoss()  # Same as ours...
     #Switch it to eval mode
+    '''load best weights here...'''
+    utils.load_weights(config, model, state_dict, )
     model.eval()
     utils.toggle_gradients(model, False)
-
     running_outputs = torch.tensor([],dtype=torch.float32)
     running_labels = torch.tensor([],dtype=torch.float32)
     running_outputs_argmax = torch.tensor([], dtype=torch.int8)
@@ -264,16 +289,16 @@ def run_test( model, dataloader_test, device):
             seq = seq.to(device)
             out = model(seq)
             #print('out 1 {}'.format(out.shape))
-            out = nn.Softmax()(out.detach().cpu())
+            out = nn.Softmax(dim=1)(out.detach().cpu())
             #print('out 2 {}'.format(out[1]))
             #print('label {}'.format(lbl.shape))
             #out = out.detach().cpu() #for BCEWithLogits
             out_argmax = torch.argmax(out, dim=1, keepdim=False).to(torch.int8)
             lbl_argmax = torch.argmax(lbl, dim=1, keepdim=False).to(torch.int8)
 
-            # print('out {}'.format(out.shape))
+            #print('out {}'.format(out.shape))
             # print('label {}'.format(lbl.shape))
-            # print('out 10 {}'.format(out[:10]))
+            #print('out 10 {}'.format(out[:10]))
             # print('label 10 {}'.format(lbl[:10]))
             #
             # print('out am {}'.format(out_argmax.shape))
@@ -290,7 +315,7 @@ def run_test( model, dataloader_test, device):
 ############################################################
 #functions to compute the metrics
 ############################################################
-def compute_metrics(config, labels, outputs, labels_argmax, outputs_argmax):
+def compute_metrics(config, labels, outputs, labels_argmax, outputs_argmax, plot_dict):
     # TP = np.sum(((labels == 1) * (np.round(outputs) == 1)))
     # FP = np.sum(((labels == 0) * (np.round(outputs) == 1)))
     # TN = np.sum(((labels == 0) * (np.round(outputs) == 0)))
@@ -304,14 +329,19 @@ def compute_metrics(config, labels, outputs, labels_argmax, outputs_argmax):
     
     try:
         classification_report_ = classification_report(labels_argmax, outputs_argmax, target_names=['Mouse', 'Human'])
-        roc_auc_score_ = 'Roc AUC Score : {:.2f}'.format(roc_auc_score(labels, outputs))
-        auprc_ = 'AUPRC {:.2f}'.format(average_precision_score(labels, outputs))
+        roc_auc_score_ = roc_auc_score(labels, outputs)
+        auprc_ = average_precision_score(labels, outputs)
+        plot_dict['auprc'].append(auprc_)
+        plot_dict['roc_auc'].append(roc_auc_score_)
+        roc_auc_score_ = 'Roc AUC Score : {:.2f}'.format(roc_auc_score_)
+        auprc_ = 'AUPRC {:.2f}'.format(auprc_)
         cm = confusion_matrix(labels_argmax, outputs_argmax)
         TN, FP, FN, TP = cm.ravel()
         precision = TP / (TP + FP)
         recall = TP / (TP + FN)
         accuracy = (TP + TN) / (TP + FP + FN + TN)
         p_r_a = 'TP: {} TN: {} FP: {} FN: {}\n\nPrecision : {:.2f} Recall : {:.2f} Accuracy : {:.2f}'.format(TP, TN, FP, FN, precision, recall, accuracy)
+
         with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
             file.write('\n\n')
             file.write(classification_report_)
@@ -324,7 +354,8 @@ def compute_metrics(config, labels, outputs, labels_argmax, outputs_argmax):
             file.write('\n')
             file.write(auprc_)
             file.write('\n\n')
-
+        # with open("{}{}_results_for_plot.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
+        #     file.write('feat_mult={}_roc_auc_score{}'.foramt(config['feature_multiplier']))
         print(p_r_a)
         print(classification_report_)
         print(roc_auc_score_)
@@ -332,6 +363,7 @@ def compute_metrics(config, labels, outputs, labels_argmax, outputs_argmax):
     except ValueError:
         print('value error!')
         pass
+    return plot_dict
     # precision = TP / (TP + FP)
     # recall = TP / (TP + FN)
     # accuracy = (TP + TN) / (TP + FP + FN + TN)

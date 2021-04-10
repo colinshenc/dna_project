@@ -9,22 +9,25 @@ import json
 import utils
 from datetime import datetime
 
+
+
 #CONSTANTS AND HYPERPARAMETERS (add to yaml)
 # Device configuration
 def run(config, plot_dict):
-    time = datetime.now()
-    time = time.strftime("%m-%d-%Y-%H:%M:%S")
+    # time = datetime.now()
+    # time = time.strftime("%m-%d-%Y-%H:%M:%S")
     state_dict = {'itr': 0, 'epoch': 0, 'best_epoch': 0, 'best_test_loss': 9999999,
                   'config': config}
 
-    if config['exp_name'] == '' and not config['resume']:
-        config['exp_name'] = '{}_model_{}_fm_{}_bs_{}_lr_{}'.format(time, config['model'], config['feature_multiplier'], config['batch_size'], config['lr'])
-    elif (not len(config['exp_name']) == 0):
-        pass
-    else:
-        print(config['exp_name'])
-        print(config['resume'])
-        raise Exception('Set up experiment wrong!')
+    # if config['exp_name'] == '' and not config['resume']:
+    #     config['exp_name'] = '{}_model_{}_bs_{}_lr_{}'.format(time, config['model'], config['batch_size'], config['lr'])
+    #     print('======>new exp name: {}'.format(config['exp_name']))
+    # elif (not len(config['exp_name']) == 0):
+    #     pass
+    # else:
+    #     print(config['exp_name'])
+    #     print(config['resume'])
+    #     raise Exception('Set up experiment wrong!')
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Cuda is available: {}'.format(torch.cuda.is_available()))
@@ -73,14 +76,14 @@ def run(config, plot_dict):
         with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
             file.write('\n\n\n------>Loading weights, resuming exp...\n')
         print('------>Loading weights, resuming exp...')
-        utils.load_weights(config, model, state_dict,)
+        utils.load_weights(config, state_dict, model, state_dict,)
 
     # code to train the model
-    model, train_error, test_error = train_model(config, dataloaders['train'], dataloaders['valid'],
+    model, _, _ = train_model(config, dataloaders['train'], dataloaders['valid'],
                                                  model, device, criterion, state_dict,
                                                  verbose=True)
 
-    labels_E, outputs_E, labels_argmax, outputs_argmax = run_test(model, dataloaders['test'], device)
+    labels_E, outputs_E, labels_argmax, outputs_argmax = run_test(config, state_dict, dataloaders['test'], device)
 
     plot_dict = compute_metrics(config, labels_E, outputs_E, labels_argmax, outputs_argmax, plot_dict)
 
@@ -89,16 +92,32 @@ def main():
 
     parser = utils.prepare_parser()
     config = vars(parser.parse_args())
+    time = datetime.now()
+    time = time.strftime("%m-%d-%Y-%H:%M:%S")
+    # state_dict = {'itr': 0, 'epoch': 0, 'best_epoch': 0, 'best_test_loss': 9999999,
+    #               'config': config}
+
+    if config['exp_name'] == '' and not config['resume']:
+        config['exp_name'] = '{}_model_{}_bs_{}_lr_{}'.format(time, config['model'], config['batch_size'], config['lr'])
+        print('======>new exp name: {}\n\n'.format(config['exp_name']))
+    elif (not len(config['exp_name']) == 0):
+        pass
+    else:
+        print(config['exp_name'])
+        print(config['resume'])
+        raise Exception('Set up experiment wrong!')
+
     if config['model'] =='ours':
         for _ in range(3):
             plot_dict={}
             plot_dict['roc_auc'] = []
             plot_dict['auprc'] = []
-            for feat_mult in [8,16,48,96,128,192,256,300,320]:
+            for feat_mult in [300,320,384,512,768]:
                 config['feature_multiplier'] = feat_mult
                 with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
                     file.write('\n\n\n\n\n\n\n\n======>>>>>>{}\n\n'.format(config))
-                    file.write('With Maxpool1d\n')
+                    file.write('No Maxpool1d\n')
+
                 print(config)
                 print('\n\n')
                 plot_dict = run(config, plot_dict)
@@ -112,14 +131,14 @@ def main():
             plot_dict = {}
             plot_dict['roc_auc'] = []
             plot_dict['auprc'] = []
-            # for feat_mult in [8, 16, 48, 96, 128, 192, 256, 300, 320]:
-            #     config['feature_multiplier'] = feat_mult
-            with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
-                file.write('\n\n\n\n======>>>>>>{}\n\n'.format(config))
-                file.write('With danq\n')
-            print('\n\n')
-            print(config)
-            plot_dict = run(config, plot_dict)
+            for feat_mult in [8,16,48,96,128,192,256,300,320]: #[8, 16, 48, 96, 128, 192, 256, 300, 320, 360, 420]:
+                config['feature_multiplier'] = feat_mult
+                with open("{}{}_results_log.txt".format(config['ckpts_path'], config['exp_name']), "a+") as file:
+                    file.write('\n\n\n\n======>>>>>>{}\n\n'.format(config))
+                    file.write('With danq\n')
+                print('\n\n')
+                print(config)
+                plot_dict = run(config, plot_dict)
             with open('{}{}_{}_data_for_plot.txt'.format(config['ckpts_path'], config['exp_name'], _),
                       'a+') as file:
                 file.write(json.dumps(plot_dict))
@@ -127,5 +146,5 @@ def main():
     else:
         raise Exception('choose the correct model..')
 if __name__ == '__main__':
-    main()
-    # utils.plot()
+    # main()
+    utils.plot()

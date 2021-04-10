@@ -20,26 +20,34 @@ import time
 class DanQ(nn.Module):
     def __init__(self, config,):
         super(DanQ, self).__init__()
-        '''NOT currently in use.'''
+
         self.config = config
 
-        self.Conv1 = nn.Conv1d(in_channels=4, out_channels=320, kernel_size=26)
+        self.Conv1 = nn.Conv1d(in_channels=4, out_channels=config['feature_multiplier'], kernel_size=26)
         #self.Conv1.weight.data = torch.Tensor(np.load('conv1_weights.npy'))
         #self.Conv1.bias.data = torch.Tensor(np.load('conv1_bias.npy'))
         self.Maxpool = nn.MaxPool1d(kernel_size=13, stride=13)
         self.Drop1 = nn.Dropout(p=0.2)
-        self.BiLSTM = nn.LSTM(input_size=320, hidden_size=320, num_layers=2,
+        self.BiLSTM = nn.LSTM(input_size=config['feature_multiplier'], hidden_size=320, num_layers=2,
                                  batch_first=True,
                                  dropout=0.5,
                                  bidirectional=True)
         self.Linear1 = nn.Linear(10880, 925)
         self.Linear2 = nn.Linear(925, 2)
+        # self.bn = nn.BatchNorm1d(config['feature_multiplier'])
         self.optim = torch.optim.RMSprop(self.parameters(), lr=self.config['lr'])
         self.sched = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, patience=5, verbose=1)
 
     def forward(self, h):
+        # print('shape 0 {}'.format(h.shape))
         h = self.Conv1(h)
+        # print('shape 5 {}'.format(h.shape))
         h = F.relu(h)
+
+        # h = self.bn(h)
+        # h = F.relu(h)
+        # print('shape 10 {}'.format(h.shape))
+        # h = self.bn(h)
         h = self.Maxpool(h)
         h = self.Drop1(h)
         h = torch.transpose(h, 1, 2)
